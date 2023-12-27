@@ -87,10 +87,6 @@ initial_portfolio_value = sum(x0(1:n));
 % Initialize matrix to store the cumulative returns over time
 cumulative_returns = zeros(1, length(tt));
 
-
-
-wk_return_first_asset = zeros(1, length(tt));
-
 % Iterative calculation
 for i = 1:length(tt)-1
     % Calculate the increment in portfolio weights
@@ -117,10 +113,6 @@ for i = 1:length(tt)-1
 
     % Normalize weights for the next iteration (optional, depending on your needs)
     % xx(:, i+1) = FUN_G(xx(:, i+1), n, xL);
-
-    % Save wk_return at each time step
-    wk_return_first_asset(i) = wk_return(index, 1);
-
 end
 
 % Ensure that indexing is within bounds for wk_return at the last time step
@@ -134,7 +126,12 @@ portfolio_value(end) = sum(asset_values(:, end));
 
 count_time=toc; % Stop the timer
 
-
+% Visualize the portfolio value over time
+figure;
+plot(tt, portfolio_value);
+xlabel('Time');
+ylabel('Portfolio Value');
+title('Portfolio Value Over Time');
 
 % Visualize the transient behavior if required
 plot_transis=1;
@@ -163,19 +160,6 @@ if plot_transis==1
     ylabel('Cumulative Returns');
     title('Cumulative Returns Over Time');
 
-    % Visualize how wk_return for the first asset changes over time
-    figure;
-    plot(tt, wk_return_first_asset);
-    xlabel('Time');
-    ylabel('wk\_return for the First Asset');
-    title('wk\_return for the First Asset Over Time');
-
-    % Visualize the portfolio value over time
-    figure;
-    plot(tt, portfolio_value);
-    xlabel('Time');
-    ylabel('Portfolio Value');
-    title('Portfolio Value Over Time');
 end
 
 
