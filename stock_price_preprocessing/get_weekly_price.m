@@ -2,7 +2,10 @@ function get_weekly_price
 % 函数用于计算股票的周度价格和周度收益率
 
 % 加载包含股票数据的文件
-load('stocks_weekly_FTSE.mat');
+% load('stocks_weekly_FTSE.mat');
+% load('clean_FTSE100_stocks.mat')
+dataset_name = "FTSE100_new";
+load('clean_stock_'+ dataset_name + '.mat');
 
 % 初始化变量
 wk_price = zeros(size(new_stocks, 1), size(new_stocks, 2));
@@ -27,11 +30,11 @@ end
 Correlation = corrcoef(wk_return);
 
 % 保存相关数据到文件(ASCII编码)
-save('correlation_matrix', 'Correlation', '-ASCII');
-save('mean_return', 'mean_return', '-ASCII');
-save('stdDev_return', 'stdDev_return', '-ASCII');
-save('wk_price', 'wk_price', '-ASCII');
-save('wk_return', 'wk_return', '-ASCII');
+save(dataset_name + 'correlation_matrix', 'Correlation', '-ASCII');
+save(dataset_name + 'mean_return', 'mean_return', '-ASCII');
+save(dataset_name + 'stdDev_return', 'stdDev_return', '-ASCII');
+save(dataset_name + 'wk_price', 'wk_price', '-ASCII');
+save(dataset_name + 'wk_return', 'wk_return', '-ASCII');
 
 % 保存日期信息到ASCII文件
 date = new_stocks(1).Date;

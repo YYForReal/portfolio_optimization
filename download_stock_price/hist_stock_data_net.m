@@ -4,7 +4,7 @@ function stocks = hist_stock_data_net(start_date, end_date, varargin)
 % 原本论文的时间：hist_stock_data_net('01012000', '01012018', 'tickers_FTSE100.txt', 'frequency', 'wk');
 % 原本论文的时间：hist_stock_data_net('01012000', '01012018', 'tickers_HDAX.txt', 'frequency', 'wk');
 % 原本论文的时间：hist_stock_data_net('01012000', '01012018', 'tickers_SP500.txt', 'frequency', 'wk');
-% 新调用：hist_stock_data_net('01012000', '01012023', 'tickers_HSI.txt', 'frequency', 'wk');
+% 新调用：hist_stock_data_net('01012018', '01012023', 'tickers_HSI.txt', 'frequency', 'wk');
 % 新调用：hist_stock_data_net('01012000', '01012023', 'tickers_HSI.txt', 'frequency', 'wk');
 % 新调用：hist_stock_data_net('01012000', '01012023', 'tickers_HSI.txt', 'frequency', 'wk');
 % 新调用：hist_stock_data_net('01012000', '01012023', 'tickers_HSI.txt', 'frequency', 'wk');
@@ -188,16 +188,16 @@ for i = 1:length(tickers)
     % Put data into appropriate variables
     if strcmp(event, 'history')     % If historical prices
         stocks(idx).Date = temp.Date;
-        stocks(idx).Open = str2double(temp.Open);
-        stocks(idx).High = str2double(temp.High);
-        stocks(idx).Low = str2double(temp.Low);
-        stocks(idx).Close = str2double(temp.Close);
-        stocks(idx).AdjClose = str2double(temp.AdjClose);
-        stocks(idx).Volume = str2double(temp.Volume);
+        stocks(idx).Open = temp.Open;
+        stocks(idx).High = temp.High;
+        stocks(idx).Low = temp.Low;
+        stocks(idx).Close = temp.Close;
+        stocks(idx).AdjClose = temp.AdjClose;
+        stocks(idx).Volume = temp.Volume;
         idx = idx + 1;
     end
     % update waitbar
     waitbar(i/length(tickers),h)
 end
 close(h)    % close waitbar
-save('stock_FTSE100.mat',"stocks")
+save('stock_FTSE100_new.mat',"stocks")

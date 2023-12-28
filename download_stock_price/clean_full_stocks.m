@@ -1,4 +1,10 @@
-load("stock_FTSE100.mat");
+% load("stock_FTSE100.mat");
+% load()
+
+% file_name = "stock_HSI_new.mat";
+file_name = "stock_FTSE100_new.mat";
+output_file_name = "clean_" + file_name; 
+load(file_name)
 
 
 % 计算最大日期长度
@@ -11,12 +17,13 @@ new_stocks = struct('Ticker', {}, 'Date', {}, 'Open', {}, 'High', {}, 'Low', {},
 for i = 1:length(stocks)
     ticker = stocks(i).Ticker;
     dates = stocks(i).Date;
-    
-    if length(dates) == maxDateLength
+    % 检查日期长度和是否包含NaN
+    if length(dates) == maxDateLength 
         % 将符合条件的股票添加到新的结构体数组中
         new_stocks(end + 1) = stocks(i);
     end
+
 end
 
 % 保存新的结构体数组到.mat文件
-save('clean_FTSE100_stocks.mat', 'new_stocks');
+save(output_file_name, 'new_stocks');

@@ -1,6 +1,7 @@
 function get_weekly_price
-load('stocks_weekly_FTSE.mat');
 
+% load('stocks_weekly_FTSE.mat');
+load("stoskc.mat")
 
 for i=1:size(new_stocks,2)
     wk_price(:,i)=new_stocks(i).AdjClose;

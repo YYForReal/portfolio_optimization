@@ -9,6 +9,9 @@ dt=1.5e-3; % 时间步长
 
 % 加载数据并计算协方差矩阵
 wk_return=load('wk_return','-ascii'); 
+wk_price=load('wk_price','-ascii'); 
+
+
 data_sigma=cov(wk_return); 
 n=size(data_sigma,1); % 资产数量
 x0=rand(2*(n),1); % 随机初始条件
@@ -72,149 +75,107 @@ I_P=I-P; % 计算I-P
 % % 开始可视化行为
 % % ...
 
-% % -----------------------------------------------------------
-
-%% 这里是tt时间步长版本2
-% Initialize matrix to store the value of each asset over time
-asset_values = zeros(n, length(tt));
-
-% Initialize matrix to store the portfolio value over time
-portfolio_value = zeros(1, length(tt));
-
-% Calculate the initial portfolio value
-initial_portfolio_value = sum(x0(1:n));
-
-% Initialize matrix to store the cumulative returns over time
-cumulative_returns = zeros(1, length(tt));
+%% -----------------------------------------------------------
+week_number = length(wk_return);
 
 
-
-wk_return_first_asset = zeros(1, length(tt));
-
-% Iterative calculation
+% 迭代计算
 for i = 1:length(tt)-1
-    % Calculate the increment in portfolio weights
     du = NN_MODEL_LIU(xx(:,i), n, xL, P, small_W, W, I_P);
-    
-    % Update portfolio weights using the calculated increment
     xx(:,i+1) = xx(:,i) + (dt)*(du)/0.001;
-
-
-    % Ensure that indexing is within bounds for wk_return
-    index = min(i, size(wk_return, 1));
-
-    % Calculate the value of each asset at time i
-    asset_values(:, i) = xx(1:n, i) .* wk_return(index, :)';
-       
     
-
-    % Update portfolio value at time i
-    portfolio_value(i) = sum(asset_values(:, i));
-
-    % Calculate cumulative return at time i
-    cumulative_returns(i) = (portfolio_value(i) / initial_portfolio_value);
-
-
-    % Normalize weights for the next iteration (optional, depending on your needs)
+    % 对于下一次迭代，可以选择规范化权重
     % xx(:, i+1) = FUN_G(xx(:, i+1), n, xL);
-
-    % Save wk_return at each time step
-    wk_return_first_asset(i) = wk_return(index, 1);
-
 end
 
-% Ensure that indexing is within bounds for wk_return at the last time step
-last_index = min(length(tt), size(wk_return, 1));
-
-% Calculate the value of each asset at the last time step
-asset_values(:, end) = xx(1:n, end) .* wk_return(last_index, :)';
-
-% Update portfolio value at the last time step
-portfolio_value(end) = sum(asset_values(:, end));
-
-count_time=toc; % Stop the timer
+% 在初始化部分添加以下代码
+% 计算初始投资组合价值
+initial_weights = xx(n+1:2*n, length(tt)-2); % 使用第一周的权重作为初始权重
+initial_prices = wk_price(1, :); % 使用第一周的价格作为初始价格
 
 
+% 初始化矩阵以存储每周的收益率
+weekly_returns = zeros(week_number, 1);
 
-% Visualize the transient behavior if required
-plot_transis=1;
+% 初始化投资组合价值
+portfolio_value = zeros(week_number, 1);
+
+% 初始化每周的总收益率
+total_returns = zeros(week_number, 1);
+% 计算每周的收益率和投资组合价值
+for i = 1:week_number
+    % 获取第 i 周的权重
+    weights = transpose(xx(n+1:2*n, i));  % 使用第 i 周的权重 (1,58)
+
+    % 计算每支股票在第 i 周的收益率
+    stock_returns = (wk_return(i, :)) .* (weights)  ; % (1,58)
+
+    % 计算整个投资组合在第 i 周的收益率
+    weekly_returns(i) = sum(stock_returns);
+
+    % 计算第 i 周的投资组合价值
+    portfolio_value(i) = sum(weights .* wk_price(i, :));
+
+    % 计算累积总收益率
+    if i == 1
+        total_returns(i) = 0;
+    else
+        % total_returns(i) = (1 + total_returns(i-1)) * (1 + weekly_returns(i)) - 1;
+        total_returns(i) = portfolio_value(i) / portfolio_value(1);
+    end
+end
+
+% 可视化每周的收益率
+figure;
+plot(1:week_number, weekly_returns);
+xlabel('周');
+ylabel('周收益率');
+title('每周收益率');
+
+% 可视化每周的投资组合价值
+figure;
+plot(1:week_number, portfolio_value);
+xlabel('周');
+ylabel('投资组合价值');
+title('每周投资组合价值');
+
+% 可视化总收益率
+figure;
+bar(total_returns);
+xlabel('总收益率');
+title('总收益率');
+
+plot_transis = 1;
 
 if plot_transis==1
-    % Plot transient behavior
+    % 绘制过渡行为图像
     ttt=(round(count_time/(dt))*(dt))*dt/(length(tt)-1);
     count_tt=0;
-
+    
     for jj=1:length(tt)-1
         count_tt(jj+1)=count_tt(jj)+ttt;
     end
-    % 绘制资产配比
-    figure;
+    
+    figure
+    % 绘制y的过渡行为
+    % subplot(1,2,2); % 添加子图
     plot(count_tt(1:length(tt)-1),xx(n+1:2*n,1:length(tt)-1));
-    hold on;
+    title('Transition Behavior of y');
     ylabel('\it y','FontName','Times New Roman');
     xlabel('time','FontName','Times New Roman');
+    xlim([0 0.00020]);
     ylim([0 0.2]);
 
+    % 绘制x的过渡行为
+    % subplot(1,2,1); % 添加子图
+    % plot(count_tt(1:length(tt)-1),xx(1:n,1:length(tt)-1));
+    % title('Transition Behavior of x');
+    % ylabel('\it x','FontName','Times New Roman');
+    % xlabel('time','FontName','Times New Roman');
+    % xlim([0 0.000002]); % 设定为实际的时间范围
+    % ylim([xL 1]); % 假设x的上界是1，确保y轴的范围能反映出x的变化
 
-    % Visualize the cumulative returns over time
-    figure;
-    plot(tt, cumulative_returns);
-    xlabel('Time');
-    ylabel('Cumulative Returns');
-    title('Cumulative Returns Over Time');
-
-    % Visualize how wk_return for the first asset changes over time
-    figure;
-    plot(tt, wk_return_first_asset);
-    xlabel('Time');
-    ylabel('wk\_return for the First Asset');
-    title('wk\_return for the First Asset Over Time');
-
-    % Visualize the portfolio value over time
-    figure;
-    plot(tt, portfolio_value);
-    xlabel('Time');
-    ylabel('Portfolio Value');
-    title('Portfolio Value Over Time');
 end
-
-
-
-
-
-
-
-
-
-% if plot_transis==1
-%     % 绘制过渡行为图像
-%     ttt=(round(count_time/(dt))*(dt))*dt/(length(tt)-1);
-%     count_tt=0;
-    
-%     for jj=1:length(tt)-1
-%         count_tt(jj+1)=count_tt(jj)+ttt;
-%     end
-    
-%     figure
-%     % 绘制y的过渡行为
-%     % subplot(1,2,2); % 添加子图
-%     plot(count_tt(1:length(tt)-1),xx(n+1:2*n,1:length(tt)-1));
-%     title('Transition Behavior of y');
-%     ylabel('\it y','FontName','Times New Roman');
-%     xlabel('time','FontName','Times New Roman');
-%     xlim([0 0.00020]);
-%     ylim([0 0.2]);
-
-%     % 绘制x的过渡行为
-%     % subplot(1,2,1); % 添加子图
-%     % plot(count_tt(1:length(tt)-1),xx(1:n,1:length(tt)-1));
-%     % title('Transition Behavior of x');
-%     % ylabel('\it x','FontName','Times New Roman');
-%     % xlabel('time','FontName','Times New Roman');
-%     % xlim([0 0.000002]); % 设定为实际的时间范围
-%     % ylim([xL 1]); % 假设x的上界是1，确保y轴的范围能反映出x的变化
-
-% end
 
 
 end
