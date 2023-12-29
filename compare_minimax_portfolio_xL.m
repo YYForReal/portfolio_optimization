@@ -91,6 +91,10 @@ for i = 1:length(tt)-1
     % nxx(:, i+1) = FUN_G(xx(:, i+1), n, xL);
 end
 
+% 使用FUNC对xx进行规范化权重
+xx = FUN_G(xx, n, xL);
+
+
 week_number = length(wk_return);
 
 % 计算初始投资组合价值
@@ -109,7 +113,7 @@ total_returns = zeros(week_number, 1);
 % 计算每周的收益率和投资组合价值
 for i = 1:week_number
     % 获取第 i 周的权重
-    weights = transpose(xx(n+1:2*n, i));  % 使用第 i 周的权重 (1,58)
+    weights = transpose(xx(n+1:2*n, length(tt) - 1));  % 使用最后计算的权重 (1,58)
 
     % 计算每支股票在第 i 周的收益率
     stock_returns = (wk_return(i, :)) .* (weights)  ; % (1,58)

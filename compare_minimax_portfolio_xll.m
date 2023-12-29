@@ -1,51 +1,101 @@
 function [] = compare_minimax_portfolio()
-    % 创建一个新的图像
-    figure;
-    
-    % 加载数据并计算协方差矩阵
-    wk_return = load('wk_return','-ascii'); 
-    wk_price = load('wk_price','-ascii'); 
-    
-    % 测试不同数据截断情况的执行时间
-    % data_sizes = [200, 400, 600, 800];
-    data_sizes = 100:100:900;
+% 对比不同 w 超参数的实验
+% ws = [0.2, 0.5, 0.8, 1.0]; % 不同的 w 超参数
+%  设置10个递增初始化权重向量 0.1 0.2 ...
+xls = linspace(0, 1, 10); % 不同的 w 超参数
 
-    execution_times = zeros(size(data_sizes));
+% 初始化不同的w平均结果
+average_returns = zeros(size(xls));
 
-    for i = 1:length(data_sizes)
-        data_size = data_sizes(i);
+% 创建一个新的图像
+figure;
 
-        % 截断数据
-        wk_return_truncated = wk_return(1:data_size, :);
-        wk_price_truncated = wk_price(1:data_size, :);
+% 循环遍历50次，求平均
+% times = 50;
+times = 1;
+for time = 1:times
+    % 执行极小极大投资组合优化和可视化
+    for i = 1:length(xls)
+        xL = xls(i);
 
-        % 测试执行时间
-        tic;
-        [~, ~, ~] = minimax_portfolio(wk_return_truncated, wk_price_truncated);
-        execution_times(i) = toc;
+        % 执行极小极大投资组合优化
+        [weekly_returns, portfolio_value, total_returns] = minimax_portfolio(xL);
+
+        average_returns(i) = average_returns(i) + total_returns(end);
+
+        % 在同一子图中叠加绘图
+        subplot(2, 2, 1); % 第一行第一列
+        plot(1:length(weekly_returns), weekly_returns, 'o-', 'DisplayName', ['xL = ' num2str(xL)]);
+        hold on;
+
+        subplot(2, 2, 2); % 第一行第二列
+        plot(1:length(portfolio_value), portfolio_value, 'o-', 'DisplayName', ['xL = ' num2str(xL)]);
+        hold on;
+
+        % 在新的子图中绘制总收益率
+        subplot(2, 2, 3); % 第二行第一列
+        plot(1:length(total_returns), total_returns, 'o-', 'DisplayName', ['xL = ' num2str(xL)]);
+        hold on;
+
     end
 
-    % 可视化执行时间
-    plot(data_sizes, execution_times, '-o');
-    xlabel('数据大小');
-    ylabel('执行时间 (s)');
-    title('执行时间对比');
+    % 输出平均值
+    disp(['累积总收益率：', num2str(average_returns)]);
 end
 
+% 计算平均值
+average_returns = average_returns / 50;
+
+% 输出平均值
+disp(['平均总收益率：', num2str(average_returns)]);
+
+% 绘制平均收益率的柱状图对比。
+subplot(2, 2, 4);
+bar(xls, average_returns);
+title('不同 xls 超参数的平均总收益率');
+xlabel('xL 超参数');
+ylabel('平均总收益率');
+legend('Location', 'Best');
+% 画图的时候同时在每个柱状图上显示具体数据
 
 
-function [weekly_returns, portfolio_value, total_returns] = minimax_portfolio(wk_return, wk_price)
+
+
+% 添加图例
+subplot(2, 2, 1);
+xlabel('周');
+ylabel('周收益率');
+title('每周收益率');
+legend('Location', 'Best');
+
+subplot(2, 2, 2);
+xlabel('周');
+ylabel('投资组合价值');
+title('每周投资组合价值');
+legend('Location', 'Best');
+
+% 在总收益率图中添加标题和标签
+subplot(2, 2, 3);
+xlabel('周');
+ylabel('总收益率');
+title('总收益率对比');
+legend('Location', 'Best');
+
+
+end
+
+function [weekly_returns, portfolio_value, total_returns] = minimax_portfolio(xL)
 % 极小极大投资组合优化
 
-w = 0.5;
-xL = 0.005;
+% xL = 0.01; % x的下界
+w = 0.2;
 t0 = 0; % 开始时间
 tf = 20; % 结束时间
 dt = 1.5e-3; % 时间步长
 
 % 加载数据并计算协方差矩阵
-% wk_return = load('wk_return','-ascii'); 
-% wk_price = load('wk_price','-ascii'); 
+wk_return = load('wk_return','-ascii'); 
+wk_price = load('wk_price','-ascii'); 
 
 data_sigma = cov(wk_return); 
 n = size(data_sigma,1); % 资产数量
@@ -72,8 +122,14 @@ for i = 1:length(tt)-1
     xx(:,i+1) = xx(:,i) + (dt)*(du)/0.001;
     
     % 对于下一次迭代，可以选择规范化权重
-    % nxx(:, i+1) = FUN_G(xx(:, i+1), n, xL);
+    xx(:, i+1) = FUN_G(xx(:, i+1), n, xL);
 end
+
+for i = 1:length(tt)-1
+    nxx(:,i)=FUN_G(xx(:,i),n,xL);
+end
+
+
 
 week_number = length(wk_return);
 
@@ -90,13 +146,11 @@ portfolio_value = zeros(week_number, 1);
 % 初始化每周的总收益率
 total_returns = zeros(week_number, 1);
 
-disp("week_number")
-
-
 % 计算每周的收益率和投资组合价值
 for i = 1:week_number
     % 获取第 i 周的权重
-    weights = transpose(xx(n+1:2*n, i));  % 使用第 i 周的权重 (1,58)
+    % weights = transpose(xx(n+1:2*n, i));  % 使用第 i 周的权重 (1,58)
+    weights = transpose(xx(n+1:2*n, length(tt) - 1));  % 使用最后计算的权重
 
     % 计算每支股票在第 i 周的收益率
     stock_returns = (wk_return(i, :)) .* (weights)  ; % (1,58)

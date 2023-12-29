@@ -1,7 +1,7 @@
 function [optf]=minimax_portfolio()
 % 极小极大投资组合优化--
 w=0.5; % 权重
-xL=0.01; % x的下界
+xL=0.001; % x的下界
 
 t0=0; % 开始时间
 tf=20; % 结束时间
@@ -11,8 +11,18 @@ dt=1.5e-3; % 时间步长
 wk_return=load('wk_return','-ascii'); 
 wk_price=load('wk_price','-ascii'); 
 
+week_number = length(wk_return);
 
-data_sigma=cov(wk_return); 
+% 计算11年的周数
+weeks_in_11_years = (11/18)*week_number;
+disp([num2str(weeks_in_11_years) ' weeks in 11 years.']);
+
+% year11_weeks = 573; % 2011年的周数
+
+% 截断11年的周回报
+trunc_return = wk_return(1:week_number,:);
+
+data_sigma=cov(trunc_return); 
 n=size(data_sigma,1); % 资产数量
 x0=rand(2*(n),1); % 随机初始条件
 
@@ -76,17 +86,21 @@ I_P=I-P; % 计算I-P
 % % ...
 
 %% -----------------------------------------------------------
-week_number = length(wk_return);
 
 
 % 迭代计算
 for i = 1:length(tt)-1
-    du = NN_MODEL_LIU(xx(:,i), n, xL, P, small_W, W, I_P);
-    xx(:,i+1) = xx(:,i) + (dt)*(du)/0.001;
-    
-    % 对于下一次迭代，可以选择规范化权重
-    % xx(:, i+1) = FUN_G(xx(:, i+1), n, xL);
+    du = NN_MODEL_LIU(xx(:,i),n,xL,P,small_W,W,I_P);
+    xx(:,i+1) =xx(:,i)+(dt)*(du)/0.001;
 end
+count_time=toc
+
+for i = 1:length(tt)-1
+    nxx(:,i)=FUN_G(xx(:,i),n,xL);
+end
+
+
+xx(:,length(tt))=FUN_G(xx(:,length(tt)),n,xL);
 
 % 在初始化部分添加以下代码
 % 计算初始投资组合价值
@@ -102,10 +116,19 @@ portfolio_value = zeros(week_number, 1);
 
 % 初始化每周的总收益率
 total_returns = zeros(week_number, 1);
+
+
+weights = transpose(xx(n+1:2*n, length(tt) - 1));  % 使用最后计算的权重
+next_weights = weights;
+
 % 计算每周的收益率和投资组合价值
 for i = 1:week_number
-    % 获取第 i 周的权重
-    weights = transpose(xx(n+1:2*n, i));  % 使用第 i 周的权重 (1,58)
+
+
+    % error: weights = transpose(xx(n+1:2*n, i));  % 使用第 i 周的权重 (1,58)
+    % weights = transpose(xx(n+1:2*n, length(tt) - 1));  % 使用最后计算的权重
+    weights = next_weights;
+
 
     % 计算每支股票在第 i 周的收益率
     stock_returns = (wk_return(i, :)) .* (weights)  ; % (1,58)
@@ -121,9 +144,34 @@ for i = 1:week_number
         total_returns(i) = 0;
     else
         % total_returns(i) = (1 + total_returns(i-1)) * (1 + weekly_returns(i)) - 1;
-        total_returns(i) = portfolio_value(i) / portfolio_value(1);
+        total_returns(i) = (portfolio_value(i) / portfolio_value(1)) - 1;
     end
 end
+
+
+
+% 计算初始的股票价值
+initial_prices = sum(weights .* wk_price(1, :));
+% 计算结束的股票价值
+end_prices = sum(weights .* wk_price(week_number, :));
+
+% 计算收益率
+initial_returns = (end_prices - initial_prices) / initial_prices;
+
+years = 18;
+% 根据结束和初始的股票价值，计算平均年化收益率
+annualized_returns = (end_prices / initial_prices ) ^ (1/years) - 1;
+
+% 输出
+disp('初始的股票价值');
+disp(initial_prices);
+disp('结束的股票价值');
+disp(end_prices);
+disp('收益率');
+disp(initial_returns);
+disp('平均年化收益率');
+disp(annualized_returns);
+
 
 % 可视化每周的收益率
 figure;
@@ -135,14 +183,14 @@ title('每周收益率');
 % 可视化每周的投资组合价值
 figure;
 plot(1:week_number, portfolio_value);
-xlabel('周');
+xlabel('周数');
 ylabel('投资组合价值');
 title('每周投资组合价值');
 
 % 可视化总收益率
 figure;
 bar(total_returns);
-xlabel('总收益率');
+xlabel('周数');
 title('总收益率');
 
 plot_transis = 1;

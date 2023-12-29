@@ -1,35 +1,65 @@
 function [] = compare_minimax_portfolio()
 % 对比不同 w 超参数的实验
-ws = [0.2, 0.5, 0.8, 1.0]; % 不同的 w 超参数
+% ws = [0.2, 0.5, 0.8, 1.0]; % 不同的 w 超参数
+%  设置10个递增初始化权重向量 0.1 0.2 ...
+ws = linspace(0, 1, 10); % 不同的 w 超参数
+
+% 初始化不同的w平均结果
+average_returns = zeros(size(ws));
 
 % 创建一个新的图像
 figure;
 
-% 执行极小极大投资组合优化和可视化
-for i = 1:length(ws)
-    w = ws(i);
+% 循环遍历50次，求平均
+% times = 50;
+times = 1;
+for time = 1:times
+    % 执行极小极大投资组合优化和可视化
+    for i = 1:length(ws)
+        w = ws(i);
 
-    % 执行极小极大投资组合优化
-    [weekly_returns, portfolio_value, total_returns] = minimax_portfolio(w);
+        % 执行极小极大投资组合优化
+        [weekly_returns, portfolio_value, total_returns] = minimax_portfolio(w);
 
-    % 在同一子图中叠加绘图
-    subplot(2, 2, 1); % 第一行第一列
-    plot(1:length(weekly_returns), weekly_returns, 'o-', 'DisplayName', ['w = ' num2str(w)]);
-    hold on;
+        average_returns(i) = average_returns(i) + total_returns(end);
 
-    subplot(2, 2, 2); % 第一行第二列
-    plot(1:length(portfolio_value), portfolio_value, 'o-', 'DisplayName', ['w = ' num2str(w)]);
-    hold on;
+        % 在同一子图中叠加绘图
+        subplot(2, 2, 1); % 第一行第一列
+        plot(1:length(weekly_returns), weekly_returns, 'o-', 'DisplayName', ['w = ' num2str(w)]);
+        hold on;
 
-    % 在新的子图中绘制总收益率
-    subplot(2, 2, 3); % 第二行第一列
-    plot(1:length(total_returns), total_returns, 'o-', 'DisplayName', ['w = ' num2str(w)]);
-    hold on;
+        subplot(2, 2, 2); % 第一行第二列
+        plot(1:length(portfolio_value), portfolio_value, 'o-', 'DisplayName', ['w = ' num2str(w)]);
+        hold on;
 
+        % 在新的子图中绘制总收益率
+        subplot(2, 2, 3); % 第二行第一列
+        plot(1:length(total_returns), total_returns, 'o-', 'DisplayName', ['w = ' num2str(w)]);
+        hold on;
 
+    end
 
-
+    % 输出平均值
+    disp(['累积总收益率：', num2str(average_returns)]);
 end
+
+% 计算平均值
+average_returns = average_returns / 50;
+
+% 输出平均值
+disp(['平均总收益率：', num2str(average_returns)]);
+
+% 绘制平均收益率的柱状图对比。
+subplot(2, 2, 4);
+bar(ws, average_returns);
+title('不同 w 超参数的平均总收益率');
+xlabel('w 超参数');
+ylabel('平均总收益率');
+legend('Location', 'Best');
+% 画图的时候同时在每个柱状图上显示具体数据
+
+
+
 
 % 添加图例
 subplot(2, 2, 1);
@@ -112,7 +142,8 @@ total_returns = zeros(week_number, 1);
 % 计算每周的收益率和投资组合价值
 for i = 1:week_number
     % 获取第 i 周的权重
-    weights = transpose(xx(n+1:2*n, i));  % 使用第 i 周的权重 (1,58)
+    % weights = transpose(xx(n+1:2*n, i));  % 使用第 i 周的权重 (1,58)
+    weights = transpose(xx(n+1:2*n, length(tt) - 1));  % 使用最后计算的权重
 
     % 计算每支股票在第 i 周的收益率
     stock_returns = (wk_return(i, :)) .* (weights)  ; % (1,58)

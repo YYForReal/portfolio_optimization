@@ -42,25 +42,27 @@ function [] = compare_minimax_portfolio()
     end
 
     % 计算平均执行时间
-    average_execution_times = mean(execution_times);
+    % average_execution_times = mean(execution_times);
 
     % 可视化平均执行时间
-    plot(data_sizes, average_execution_times, '-o');
-    xlabel('数据大小');
-    ylabel('平均执行时间 (s)');
-    title('平均执行时间对比');
+    % plot(data_sizes, average_execution_times, '-o');
+    % xlabel('数据大小');
+    % ylabel('平均执行时间 (s)');
+    % title('平均执行时间对比');
 
     % 计算平均最后总收益率
     average_final_total_returns = mean(final_total_returns);
 
     % 可视化平均最后总收益率
     figure;
-    plot(data_sizes, average_final_total_returns, '-o');
+    % plot(data_sizes, average_final_total_returns, '-o');
+    % 使用柱状图表示，两个柱子data_sizes = [573,930]，标签分别为11年训练数据和18年训练数据
+    bar(data_sizes, average_final_total_returns);
     xlabel('数据大小');
     ylabel('平均最后总收益率');
     title('平均最后总收益率对比');
 
-
+    
 
 end
 
@@ -132,7 +134,7 @@ disp(week_number)
 % 计算每周的收益率和投资组合价值
 for i = 1:week_number
     % 获取第 i 周的权重
-    weights = transpose(xx(n+1:2*n, i));  % 使用第 i 周的权重 (1,58)
+    weights = transpose(xx(n+1:2*n, length(tt)- 1));  % 使用第 i 周的权重 (1,58)
 
     % 计算每支股票在第 i 周的收益率
     stock_returns = (wk_return(i, :)) .* (weights)  ; % (1,58)
